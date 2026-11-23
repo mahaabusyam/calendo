@@ -56,7 +56,9 @@ interface SidebarContentProps {
   showCloseButton?: boolean;
 }
 
-const SidebarContent: React.FC<SidebarContentProps> = ({
+const SidebarContent: React.FC<
+  SidebarContentProps
+> = ({
   pathname,
   onNavigate,
   onCloseMobile,
@@ -74,6 +76,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             <div className="w-7 h-7 rounded-[8px] bg-[var(--color-secondary)] text-[var(--color-on-secondary)] flex items-center justify-center">
               <CalendarClock className="w-4 h-4" />
             </div>
+
             <span className="font-display text-[16px] leading-6 tracking-[-0.1px] font-semibold text-[var(--color-on-surface)]">
               Calendo
             </span>
@@ -83,16 +86,18 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             <span className="text-[12px] leading-4 tracking-[0.1px] font-medium px-2 py-0.5 rounded-full bg-[var(--color-primary-container)] text-[var(--color-on-primary-container)]">
               Pro
             </span>
-            {showCloseButton && onCloseMobile && (
-              <button
-                type="button"
-                aria-label="Close navigation menu"
-                onClick={onCloseMobile}
-                className="p-1.5 rounded-[8px] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)] transition-colors duration-[120ms] ease-out cursor-pointer"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
+
+            {showCloseButton &&
+              onCloseMobile && (
+                <button
+                  type="button"
+                  aria-label="Close navigation menu"
+                  onClick={onCloseMobile}
+                  className="p-1.5 rounded-[8px] text-[var(--color-on-surface-variant)] hover:bg-[var(--color-surface-container)] hover:text-[var(--color-on-surface)] transition-colors duration-[120ms] ease-out cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              )}
           </div>
         </div>
 
@@ -102,15 +107,23 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         >
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
-            const baseHref = item.href.split("#")[0];
-            const isActive = pathname === baseHref && item.id !== "bookings";
+            const baseHref =
+              item.href.split("#")[0];
+
+            const isActive =
+              pathname === baseHref &&
+              item.id !== "bookings";
 
             return (
               <Link
                 key={item.id}
                 href={item.href}
                 onClick={onNavigate}
-                aria-current={isActive ? "page" : undefined}
+                aria-current={
+                  isActive
+                    ? "page"
+                    : undefined
+                }
                 className={[
                   "relative flex items-center gap-2.5 px-3 py-2 rounded-[8px] text-[14px] leading-5 font-medium transition-colors duration-[120ms] ease-out whitespace-nowrap",
                   isActive
@@ -121,17 +134,27 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
                 {isActive && (
                   <motion.span
                     layoutId="dashboard-active-nav"
-                    transition={{ type: "spring", stiffness: 460, damping: 34 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 460,
+                      damping: 34,
+                    }}
                     className="absolute inset-0 rounded-[8px] bg-[var(--color-primary-container)]"
                   />
                 )}
+
                 <Icon
                   className={[
                     "relative z-10 w-4 h-4 shrink-0",
-                    isActive ? "text-[var(--color-primary)]" : "",
+                    isActive
+                      ? "text-[var(--color-primary)]"
+                      : "",
                   ].join(" ")}
                 />
-                <span className="relative z-10">{item.label}</span>
+
+                <span className="relative z-10">
+                  {item.label}
+                </span>
               </Link>
             );
           })}
@@ -143,10 +166,12 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
           alt="Maha Abu Syam"
           sizeClassName="w-9 h-9"
         />
+
         <div className="flex flex-col min-w-0">
           <span className="text-[14px] leading-5 font-semibold text-[var(--color-on-surface)] truncate">
             Maha Abu Syam
           </span>
+
           <span className="font-mono text-[12px] leading-4 font-medium text-[var(--color-outline)] truncate">
             /maha
           </span>
@@ -158,22 +183,36 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
 export const DashboardSidebar: React.FC = () => {
   const pathname = usePathname();
-  const [isMobileOpen, setIsMobileOpen] = useState<boolean>(false);
 
-  useEffect(() => {
-    setIsMobileOpen(false);
-  }, [pathname]);
+  const [isMobileOpen, setIsMobileOpen] =
+    useState<boolean>(false);
 
   useEffect(() => {
     if (!isMobileOpen) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
+
+    const handleKeyDown = (
+      e: KeyboardEvent
+    ) => {
       if (e.key === "Escape") {
         setIsMobileOpen(false);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+
+    window.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () =>
+      window.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
   }, [isMobileOpen]);
+
+  const closeMobileMenu = () => {
+    setIsMobileOpen(false);
+  };
 
   return (
     <>
@@ -181,9 +220,19 @@ export const DashboardSidebar: React.FC = () => {
         <div className="flex items-center gap-2.5">
           <button
             type="button"
-            aria-label={isMobileOpen ? "Close menu" : "Open menu"}
-            aria-expanded={isMobileOpen}
-            onClick={() => setIsMobileOpen((prev) => !prev)}
+            aria-label={
+              isMobileOpen
+                ? "Close menu"
+                : "Open menu"
+            }
+            aria-expanded={
+              isMobileOpen
+            }
+            onClick={() =>
+              setIsMobileOpen(
+                (prev) => !prev
+              )
+            }
             className="inline-flex items-center justify-center w-9 h-9 rounded-[8px] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] text-[var(--color-on-surface)] hover:bg-[var(--color-surface-container)] transition-colors duration-[120ms] ease-out cursor-pointer"
           >
             {isMobileOpen ? (
@@ -193,10 +242,14 @@ export const DashboardSidebar: React.FC = () => {
             )}
           </button>
 
-          <Link href="/" className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="flex items-center gap-2"
+          >
             <div className="w-7 h-7 rounded-[8px] bg-[var(--color-secondary)] text-[var(--color-on-secondary)] flex items-center justify-center">
               <CalendarClock className="w-4 h-4" />
             </div>
+
             <span className="font-display text-[16px] leading-6 tracking-[-0.1px] font-semibold text-[var(--color-on-surface)]">
               Calendo
             </span>
@@ -212,26 +265,51 @@ export const DashboardSidebar: React.FC = () => {
         {isMobileOpen && (
           <div className="lg:hidden fixed inset-0 z-40 flex">
             <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.16, ease: "easeOut" }}
-              onClick={() => setIsMobileOpen(false)}
+              initial={{
+                opacity: 0,
+              }}
+              animate={{
+                opacity: 1,
+              }}
+              exit={{
+                opacity: 0,
+              }}
+              transition={{
+                duration: 0.16,
+                ease: "easeOut",
+              }}
+              onClick={
+                closeMobileMenu
+              }
               className="fixed inset-0 bg-[var(--color-secondary)]/40 backdrop-blur-[1px]"
               aria-hidden="true"
             />
 
             <motion.aside
-              initial={{ x: "-100%" }}
-              animate={{ x: 0 }}
-              exit={{ x: "-100%" }}
-              transition={{ type: "spring", stiffness: 420, damping: 36 }}
+              initial={{
+                x: "-100%",
+              }}
+              animate={{
+                x: 0,
+              }}
+              exit={{
+                x: "-100%",
+              }}
+              transition={{
+                type: "spring",
+                stiffness: 420,
+                damping: 36,
+              }}
               className="relative z-10 w-72 max-w-[82vw] h-full bg-[var(--color-surface-container-lowest)] border-r border-[var(--color-outline-variant)] shadow-lg"
             >
               <SidebarContent
                 pathname={pathname}
-                onNavigate={() => setIsMobileOpen(false)}
-                onCloseMobile={() => setIsMobileOpen(false)}
+                onNavigate={
+                  closeMobileMenu
+                }
+                onCloseMobile={
+                  closeMobileMenu
+                }
                 showCloseButton
               />
             </motion.aside>
@@ -240,7 +318,9 @@ export const DashboardSidebar: React.FC = () => {
       </AnimatePresence>
 
       <aside className="hidden lg:block w-60 shrink-0 bg-[var(--color-surface-container-lowest)] border-r border-[var(--color-outline-variant)] min-h-screen">
-        <SidebarContent pathname={pathname} />
+        <SidebarContent
+          pathname={pathname}
+        />
       </aside>
     </>
   );

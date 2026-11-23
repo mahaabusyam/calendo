@@ -17,27 +17,40 @@ import { TimeFormat } from "@/types/booking";
 import { HostAvatar } from "@/components/shared/HostAvatar";
 
 export default function SettingsPage() {
-  const [formState, setFormState] = useState<CalendoProfileState>(
-    DEFAULT_CALENDO_STATE
+  const [formState, setFormState] =
+  useState<CalendoProfileState>(
+    () => loadCalendoState()
   );
   const [savedNotice, setSavedNotice] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
+  const syncFromStore = () => {
     setFormState(loadCalendoState());
+  };
 
-    const syncFromStore = () => {
-      setFormState(loadCalendoState());
-    };
+  window.addEventListener(
+    CALENDO_STATE_EVENT,
+    syncFromStore
+  );
 
-    window.addEventListener(CALENDO_STATE_EVENT, syncFromStore);
-    window.addEventListener("storage", syncFromStore);
+  window.addEventListener(
+    "storage",
+    syncFromStore
+  );
 
-    return () => {
-      window.removeEventListener(CALENDO_STATE_EVENT, syncFromStore);
-      window.removeEventListener("storage", syncFromStore);
-    };
-  }, []);
+  return () => {
+    window.removeEventListener(
+      CALENDO_STATE_EVENT,
+      syncFromStore
+    );
+
+    window.removeEventListener(
+      "storage",
+      syncFromStore
+    );
+  };
+}, []);
 
   const showSavedFeedback = () => {
     setSavedNotice(true);
