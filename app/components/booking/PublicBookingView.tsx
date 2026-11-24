@@ -14,11 +14,8 @@ import {
   TimeSlot,
   TimeZoneId,
 } from "@/types/booking";
-import {
-  BASE_SLOTS_GAZA,
-  formatSelectedHeading,
-  getTodayDate,
-} from "@/lib/scheduling";
+import { BASE_SLOTS_GAZA, formatSelectedHeading, toDateIso } from "@/lib/scheduling";
+
 import {
   CALENDO_STATE_EVENT,
   CalendoProfileState,
@@ -33,17 +30,13 @@ export const PublicBookingView: React.FC = () => {
   const router = useRouter();
 
   const [today, setToday] = useState<Date | null>(null);
+const [selectedDay, setSelectedDay] = useState<number>(1);
 
-  const [profile, setProfile] =
+const [profile, setProfile] =
   useState<CalendoProfileState>(
     () => loadCalendoState()
   );
 
-const [selectedDay, setSelectedDay] =
-  useState<number>(1);
-
-const [selectedSlotId, setSelectedSlotId] =
-  useState<string | null>("10:00");
 
 const [calendarYear, setCalendarYear] =
   useState<number>(1970);
@@ -53,6 +46,18 @@ const [calendarMonthIndex, setCalendarMonthIndex] =
 
 const [isCalendarReady, setIsCalendarReady] =
   useState<boolean>(false);
+  const [todayIso, setTodayIso] = useState<string | null>(null);
+const [selectedDateIso, setSelectedDateIso] = useState<string | null>(null);
+const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+const getTodayDate = () => {
+  const now = new Date();
+
+  return new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
+};
 
 useEffect(() => {
   const timer = window.setTimeout(() => {
@@ -62,6 +67,7 @@ useEffect(() => {
     setCalendarYear(currentDate.getFullYear());
     setCalendarMonthIndex(currentDate.getMonth());
     setIsCalendarReady(true);
+    setTodayIso(toDateIso(new Date()));
   }, 0);
 
   return () => {
@@ -118,19 +124,14 @@ useEffect(() => {
       [profile]
     );
 
-  const headingText = useMemo(
-    () =>
-      formatSelectedHeading(
-        selectedDay,
-        calendarMonthIndex,
-        calendarYear
-      ),
-    [
-      selectedDay,
-      calendarMonthIndex,
-      calendarYear,
-    ]
-  );
+  const headingText = selectedDateIso
+  ? formatSelectedHeading(selectedDateIso)
+  : "Select a date";
+
+const handleSelectDate = (dateIso: string) => {
+  setSelectedDateIso(dateIso);
+  setSelectedSlotId(null);
+};
 
   const handleChangeTimezone = (
     tz: string
@@ -160,31 +161,31 @@ useEffect(() => {
   };
 
   const handleConfirmSlot = (
-    slot: TimeSlot
-  ) => {
-    const monthStr = String(
-      calendarMonthIndex + 1
-    ).padStart(2, "0");
+  slot: TimeSlot
+) => {
+  const monthStr = String(
+    calendarMonthIndex + 1
+  ).padStart(2, "0");
 
-    const dayStr = String(
-      selectedDay
-    ).padStart(2, "0");
+  const dayStr = String(
+    selectedDay
+  ).padStart(2, "0");
 
-    const dateIso =
-      `${calendarYear}-${monthStr}-${dayStr}`;
+  const dateIso =
+    `${calendarYear}-${monthStr}-${dayStr}`;
 
-    const query =
-      new URLSearchParams({
-        date: dateIso,
-        slotId: slot.id,
-        time: slot.id,
-        tz: profile.selectedTimezone,
-      });
+  const query =
+    new URLSearchParams({
+      date: dateIso,
+      slotId: slot.id,
+      time: slot.id,
+      tz: profile.selectedTimezone,
+    });
 
-    router.push(
-      `/booking-confirmation?${query.toString()}`
-    );
-  };
+  router.push(
+    `/booking-confirmation?${query.toString()}`
+  );
+};
 
   const selectedTimezone =
     profile.selectedTimezone as TimeZoneId;
@@ -258,40 +259,21 @@ useEffect(() => {
           </div>
 
           <div className="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-[var(--color-outline-variant)]">
-            <BookingCalendar
-              year={calendarYear}
-              monthIndex={
-                calendarMonthIndex
-              }
-              selectedDay={selectedDay}
-              onSelectDay={
-                handleSelectDay
-              }
-              onViewDateChange={(
-                year,
-                monthIndex
-              ) => {
-                setCalendarYear(year);
-                setCalendarMonthIndex(
-                  monthIndex
-                );
-
-                if (
-                  year !== calendarYear ||
-                  monthIndex !==
-                    calendarMonthIndex
-                ) {
-                  setSelectedDay(1);
-                  setSelectedSlotId(null);
-                }
-              }}
-            />
+            {todayIso ? (
+  <BookingCalendar
+    todayIso={todayIso}
+    selectedDateIso={selectedDateIso}
+    onSelectDate={handleSelectDate}
+  />
+) : (
+  <div className="p-6 text-[13px]">Loading calendar...</div>
+)}
           </div>
 
           <div className="lg:col-span-3">
             <TimeSlotsPanel
               headingText={headingText}
-              slots={BASE_SLOTS_GAZA}
+              slots={selectedDateIso ? BASE_SLOTS_GAZA : []}
               selectedTimezone={
                 selectedTimezone
               }

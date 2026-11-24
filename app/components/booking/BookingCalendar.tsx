@@ -14,14 +14,9 @@ import {
 } from "@/lib/scheduling";
 
 interface BookingCalendarProps {
-  year?: number;
-  monthIndex?: number;
-  selectedDay: number;
-  onSelectDay: (day: number) => void;
-  onViewDateChange?: (
-    year: number,
-    monthIndex: number
-  ) => void;
+  todayIso: string;
+  selectedDateIso: string | null;
+  onSelectDate: (dateIso: string) => void;
 }
 
 const WEEKDAY_HEADERS = [
@@ -34,26 +29,17 @@ const WEEKDAY_HEADERS = [
   "SAT",
 ];
 
-export const BookingCalendar: React.FC<
-  BookingCalendarProps
-> = ({
-  year: initialYear,
-  monthIndex: initialMonthIndex,
-  selectedDay,
-  onSelectDay,
-  onViewDateChange,
+export const BookingCalendar: React.FC<BookingCalendarProps> = ({
+  todayIso,
+  selectedDateIso,
+  onSelectDate,
 }) => {
   const today = getTodayDate();
 
-  const [viewYear, setViewYear] =
-    useState<number>(
-      initialYear ?? today.getFullYear()
-    );
-
-  const [viewMonthIndex, setViewMonthIndex] =
-    useState<number>(
-      initialMonthIndex ?? today.getMonth()
-    );
+  const [viewYear, setViewYear] = useState<number>(Number(todayIso.slice(0, 4)));
+  const [viewMonthIndex, setViewMonthIndex] = useState<number>(
+    Number(todayIso.slice(5, 7)) - 1
+  );
 
   const monthTitle = getMonthTitle(
     viewYear,
@@ -66,23 +52,15 @@ export const BookingCalendar: React.FC<
       viewMonthIndex
     );
 
-  const days =
-    buildMonthDays(
-      viewYear,
-      viewMonthIndex
-    );
+  const days = buildMonthDays(viewYear, viewMonthIndex, todayIso);
 
   const updateViewDate = (
-    year: number,
-    monthIndex: number
-  ) => {
-    setViewYear(year);
-    setViewMonthIndex(monthIndex);
-    onViewDateChange?.(
-      year,
-      monthIndex
-    );
-  };
+  year: number,
+  monthIndex: number
+) => {
+  setViewYear(year);
+  setViewMonthIndex(monthIndex);
+};
 
   const handlePrevMonth = () => {
     if (viewMonthIndex === 0) {
@@ -166,9 +144,7 @@ export const BookingCalendar: React.FC<
           ))}
 
           {days.map((cell) => {
-            const isSelected =
-              cell.day === selectedDay &&
-              cell.isAvailable;
+            const isSelected = cell.dateIso === selectedDateIso && cell.isAvailable;
 
             return (
               <motion.button
@@ -184,12 +160,7 @@ export const BookingCalendar: React.FC<
                   duration: 0.1,
                   ease: "easeOut",
                 }}
-                onClick={() =>
-                  cell.isAvailable &&
-                  onSelectDay(
-                    cell.day
-                  )
-                }
+                onClick={() => cell.isAvailable && onSelectDate(cell.dateIso)}
                 aria-label={`Day ${cell.day}${
                   cell.isAvailable
                     ? ", available"

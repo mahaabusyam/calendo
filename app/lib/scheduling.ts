@@ -65,27 +65,6 @@ export const BASE_SLOTS_GAZA: TimeSlot[] = [
   },
 ];
 
-export const DEFAULT_AVAILABLE_DAYS: number[] = [
-  1,
-  2,
-  3,
-  4,
-  8,
-  9,
-  10,
-  11,
-  15,
-  16,
-  17,
-  18,
-  22,
-  23,
-  24,
-  25,
-  26,
-  29,
-  30,
-];
 
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -186,65 +165,41 @@ function isMonthAfterToday(
   );
 }
 
+export const AVAILABLE_WEEKDAYS = [0, 1, 2, 3, 4];
+
+export function toDateIso(d: Date): string {
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${d.getFullYear()}-${mm}-${dd}`;
+}
+
 export function buildMonthDays(
   year: number,
   monthIndex: number,
-  availableDays: number[] = DEFAULT_AVAILABLE_DAYS
+  todayIso: string
 ): CalendarDayItem[] {
-  const daysInMonth = getDaysInMonth(year, monthIndex);
-  const today = getTodayDate();
-
-  const availableDaysSet = new Set<number>(
-    Array.isArray(availableDays)
-      ? availableDays
-      : DEFAULT_AVAILABLE_DAYS
+  return Array.from(
+    { length: getDaysInMonth(year, monthIndex) },
+    (_, idx) => {
+      const day = idx + 1;
+      const date = new Date(year, monthIndex, day);
+      const dateIso = toDateIso(date);
+      const isPast = dateIso < todayIso; // نص ISO يُقارَن أبجدياً بشكل صحيح
+      return {
+        day,
+        dateIso,
+        isPast,
+        isToday: dateIso === todayIso,
+        isAvailable: !isPast && AVAILABLE_WEEKDAYS.includes(date.getDay()),
+      };
+    }
   );
-
-  const currentMonth = isSameMonth(year, monthIndex, today);
-  const pastMonth = isMonthBeforeToday(year, monthIndex, today);
-  const futureMonth = isMonthAfterToday(year, monthIndex, today);
-
-  return Array.from({ length: daysInMonth }, (_, index) => {
-    const day = index + 1;
-
-    const monthStr = String(monthIndex + 1).padStart(2, "0");
-    const dayStr = String(day).padStart(2, "0");
-
-    const dateIso = `${year}-${monthStr}-${dayStr}`;
-
-    const isPast = pastMonth || (currentMonth && day < today.getDate());
-
-    const isToday =
-      currentMonth && day === today.getDate();
-
-    const isAvailable =
-      !isPast &&
-      (futureMonth || availableDaysSet.has(day));
-
-    return {
-      day,
-      dateIso,
-      isAvailable,
-      isPast,
-      isToday,
-    };
-  });
 }
 
-export function formatSelectedHeading(
-  day: number,
-  monthIndex: number,
-  year: number
-): string {
-  const dateObj = new Date(year, monthIndex, day);
-
-  const weekday =
-    WEEKDAY_NAMES[dateObj.getDay()] ?? WEEKDAY_NAMES[0];
-
-  const monthShort =
-    SHORT_MONTH_NAMES[monthIndex] ?? SHORT_MONTH_NAMES[0];
-
-  return `${weekday}, ${monthShort} ${day}`;
+export function formatSelectedHeading(dateIso: string): string {
+  const [y, m, d] = dateIso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return `${WEEKDAY_NAMES[date.getDay()]}, ${SHORT_MONTH_NAMES[m - 1]} ${d}`;
 }
 
 function extractBaseTime24(input: unknown): string {

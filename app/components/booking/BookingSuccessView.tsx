@@ -33,7 +33,7 @@ export const BookingSuccessView: React.FC<
   slotId = "10:00",
   tz = "Asia/Gaza",
   guestName = "",
-  guestEmail = "layla@northstar.io",
+  guestEmail = "",
   notes = "",
 }) => {
   const [calendarPrepared, setCalendarPrepared] =

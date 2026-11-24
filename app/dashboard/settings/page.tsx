@@ -289,11 +289,11 @@ export default function SettingsPage() {
                 }
                 className="px-3 py-2 rounded-[8px] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] text-[14px] text-[var(--color-on-surface)]"
               >
-                {TIME_ZONES.map((tz, idx) => (
-                  <option key={`${tz.label}-${idx}`} value={tz.label}>
-                    {tz.label}
-                  </option>
-                ))}
+                {TIME_ZONES.map((tz) => (
+  <option key={tz.value} value={tz.value}>
+    {tz.label}
+  </option>
+))}
               </select>
             </div>
 
