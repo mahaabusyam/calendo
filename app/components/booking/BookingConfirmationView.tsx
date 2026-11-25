@@ -3,40 +3,32 @@
 import React from "react";
 import { motion } from "framer-motion";
 import { CalendarClock } from "lucide-react";
-import { BookingEventDetails } from "@/types/booking";
 import { buildBookingSummary } from "@/lib/scheduling";
 import { BookingSummarySidebar } from "./BookingSummarySidebar";
 import { BookingConfirmationForm } from "./BookingConfirmationForm";
-
-const EVENT_DETAILS: BookingEventDetails = {
-  slugPath: "/maha/consultation",
-  hostName: "Maha Abu Syam",
-  hostRole: "Principal Frontend Architect",
-  hostAvatar:
-    "https://lh3.googleusercontent.com/aida/ALJJyrBHg54wTuYi9UFNjLoH3xjKB7So25WoTmGs90A7brmjLMDYQaPBLvzKgT9w33W0R7daE8mKEUVdvUqd3ttg2IpN_LXt3NWnujst0dZl0pBC06K0ba_pkyNyJgZQyFosCE3pGhVMsWT1z5xhVOlshvOI9OHhU8euOnFAKxe0KyMuqL5qNndS6TfpMIMdSLKhCyVln9HneoSAx3ktGcmtFGoGBS5c40BCGMQYh-0jK3aKe6zf9XCH",
-  isVerified: true,
-  title: "30-Min Frontend & Architecture Consultation",
-  description:
-    "A focused 1:1 session covering React and Next.js architecture, design system scalability, and frontend performance bottlenecks.",
-  durationMinutes: 30,
-  locationLabel: "Google Meet",
-  isAcceptingBookings: true,
-};
+import { useCalendoState } from "@/lib/calendo-store";
+import { TimeZoneId } from "@/types/booking";
 
 interface BookingConfirmationViewProps {
-  date?: string;
-  slotId?: string;
-  time?: string;
-  tz?: string;
+  date: string;
+  slotId: string;
+  time: string;
+  tz: string;
 }
 
-export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = ({
-  date = "2026-11-24",
-  slotId = "10:00",
-  time = "10:00 AM",
-  tz = "Asia/Gaza",
-}) => {
-  const summary = buildBookingSummary(date, slotId, tz, EVENT_DETAILS.durationMinutes);
+export const BookingConfirmationView: React.FC<
+  BookingConfirmationViewProps> = ({ date, slotId, time, tz }) => {
+  const event = useCalendoState();
+
+  const dateValue = date ?? new Date().toISOString().slice(0, 10);
+  const timeZone = tz as TimeZoneId;
+
+  const summary = buildBookingSummary(
+    dateValue,
+    slotId,
+    timeZone,
+    event.durationMinutes
+  );
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8">
@@ -45,12 +37,15 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
           <div className="w-6 h-6 rounded-[6px] bg-[var(--color-secondary)] text-[var(--color-on-secondary)] flex items-center justify-center">
             <CalendarClock className="w-3.5 h-3.5" />
           </div>
+
           <span className="text-[13px] leading-[18px] font-medium text-[var(--color-on-surface-variant)]">
             Calendo
           </span>
+
           <span className="text-[var(--color-outline)]">/</span>
+
           <span className="font-mono text-[12px] leading-4 font-medium text-[var(--color-outline)]">
-            {EVENT_DETAILS.slugPath}
+            {event.slugPath}
           </span>
         </div>
 
@@ -67,13 +62,16 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
         className="w-full max-w-[880px] bg-[var(--color-surface-container-lowest)] border border-[var(--color-outline-variant)] rounded-[12px] overflow-hidden"
       >
         <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] divide-y md:divide-y-0 md:divide-x divide-[var(--color-outline-variant)]">
-          <BookingSummarySidebar event={EVENT_DETAILS} summary={summary} />
+          <BookingSummarySidebar
+            event={event}
+            summary={summary}
+          />
 
           <BookingConfirmationForm
-            dateParam={date}
+            dateParam={dateValue}
             slotIdParam={slotId}
             timeParam={time}
-            tzParam={tz}
+            tzParam={timeZone}
             summary={summary}
           />
         </div>

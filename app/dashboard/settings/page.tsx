@@ -18,26 +18,26 @@ import { HostAvatar } from "@/components/shared/HostAvatar";
 
 export default function SettingsPage() {
   const [formState, setFormState] = useState<CalendoProfileState>(
-    DEFAULT_CALENDO_STATE
-  );
+  DEFAULT_CALENDO_STATE
+);
   const [savedNotice, setSavedNotice] = useState<boolean>(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
   useEffect(() => {
+  setFormState(loadCalendoState());
+
+  const syncFromStore = () => {
     setFormState(loadCalendoState());
+  };
 
-    const syncFromStore = () => {
-      setFormState(loadCalendoState());
-    };
+  window.addEventListener(CALENDO_STATE_EVENT, syncFromStore);
+  window.addEventListener("storage", syncFromStore);
 
-    window.addEventListener(CALENDO_STATE_EVENT, syncFromStore);
-    window.addEventListener("storage", syncFromStore);
-
-    return () => {
-      window.removeEventListener(CALENDO_STATE_EVENT, syncFromStore);
-      window.removeEventListener("storage", syncFromStore);
-    };
-  }, []);
+  return () => {
+    window.removeEventListener(CALENDO_STATE_EVENT, syncFromStore);
+    window.removeEventListener("storage", syncFromStore);
+  };
+}, []);
 
   const showSavedFeedback = () => {
     setSavedNotice(true);
@@ -276,11 +276,11 @@ export default function SettingsPage() {
                 }
                 className="px-3 py-2 rounded-[8px] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] text-[14px] text-[var(--color-on-surface)]"
               >
-                {TIME_ZONES.map((tz, idx) => (
-                  <option key={`${tz.label}-${idx}`} value={tz.label}>
-                    {tz.label}
-                  </option>
-                ))}
+                {TIME_ZONES.map((tz) => (
+  <option key={tz.value} value={tz.value}>
+    {tz.label}
+  </option>
+))}
               </select>
             </div>
 

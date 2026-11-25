@@ -1,5 +1,5 @@
 "use client";
-
+import { useEffect, useState } from "react";
 import { TimeFormat } from "@/types/booking";
 
 export interface CalendoProfileState {
@@ -85,6 +85,23 @@ export function saveCalendoState(
   }
 
   return next;
+}
+
+export function useCalendoState(): CalendoProfileState {
+  const [state, setState] = useState<CalendoProfileState>(DEFAULT_CALENDO_STATE);
+
+  useEffect(() => {
+    const sync = () => setState(loadCalendoState());
+    sync();
+    window.addEventListener(CALENDO_STATE_EVENT, sync);
+    window.addEventListener("storage", sync);
+    return () => {
+      window.removeEventListener(CALENDO_STATE_EVENT, sync);
+      window.removeEventListener("storage", sync);
+    };
+  }, []);
+
+  return state;
 }
 
 export function resetCalendoState(): CalendoProfileState {

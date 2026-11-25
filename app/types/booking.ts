@@ -1,16 +1,20 @@
 export type TimeFormat = "12h" | "24h";
 
+export type TimeZoneId =
+  | "Asia/Gaza"
+  | "Europe/Berlin"
+  | "America/New_York"
+  | "Asia/Dubai";
+
+export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
+
 export interface TimeSlot {
   id: string;
-  label12h: string;
-  label24h: string;
-  offsetMinutesFromGaza: number;
 }
 
 export interface TimeZoneOption {
-  value: string;
+  value: TimeZoneId;
   label: string;
-  offsetMinutes: number; // relative to UTC
 }
 
 export interface BookingEventDetails {
@@ -33,7 +37,7 @@ export interface BookingFormPayload {
   date: string;
   slotId: string;
   timeLabel: string;
-  timeZone: string;
+  timeZone: TimeZoneId;
 }
 
 export interface FormattedBookingSummary {
@@ -58,7 +62,7 @@ export interface BookingSummaryData {
   fullDateLabel: string;
   shortDateTimeLabel: string;
   timeRangeLabel: string;
-  timezoneId: string;
+  timezoneId: TimeZoneId;
   timezoneLabel: string;
   timeZoneLabel: string;
   time24: string;

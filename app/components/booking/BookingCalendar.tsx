@@ -2,50 +2,91 @@
 
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import {
   buildMonthDays,
   getFirstDayOffset,
   getMonthTitle,
+  getTodayDate,
 } from "@/lib/scheduling";
 
 interface BookingCalendarProps {
-  year?: number;
-  monthIndex?: number;
-  selectedDay: number;
-  onSelectDay: (day: number) => void;
+  todayIso: string;
+  selectedDateIso: string | null;
+  onSelectDate: (dateIso: string) => void;
 }
 
-const WEEKDAY_HEADERS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+const WEEKDAY_HEADERS = [
+  "SUN",
+  "MON",
+  "TUE",
+  "WED",
+  "THU",
+  "FRI",
+  "SAT",
+];
 
 export const BookingCalendar: React.FC<BookingCalendarProps> = ({
-  year: initialYear = 2026,
-  monthIndex: initialMonthIndex = 10,
-  selectedDay,
-  onSelectDay,
+  todayIso,
+  selectedDateIso,
+  onSelectDate,
 }) => {
-  const [viewYear, setViewYear] = useState<number>(initialYear);
-  const [viewMonthIndex, setViewMonthIndex] = useState<number>(initialMonthIndex);
+  const today = getTodayDate();
 
-  const monthTitle = getMonthTitle(viewYear, viewMonthIndex);
-  const firstDayOffset = getFirstDayOffset(viewYear, viewMonthIndex);
-  const days = buildMonthDays(viewYear, viewMonthIndex) ?? [];
+  const [viewYear, setViewYear] = useState<number>(Number(todayIso.slice(0, 4)));
+  const [viewMonthIndex, setViewMonthIndex] = useState<number>(
+    Number(todayIso.slice(5, 7)) - 1
+  );
+
+  const monthTitle = getMonthTitle(
+    viewYear,
+    viewMonthIndex
+  );
+
+  const firstDayOffset =
+    getFirstDayOffset(
+      viewYear,
+      viewMonthIndex
+    );
+
+  const days = buildMonthDays(viewYear, viewMonthIndex, todayIso);
+
+  const updateViewDate = (
+  year: number,
+  monthIndex: number
+) => {
+  setViewYear(year);
+  setViewMonthIndex(monthIndex);
+};
 
   const handlePrevMonth = () => {
     if (viewMonthIndex === 0) {
-      setViewYear((y) => y - 1);
-      setViewMonthIndex(11);
+      updateViewDate(
+        viewYear - 1,
+        11
+      );
     } else {
-      setViewMonthIndex((m) => m - 1);
+      updateViewDate(
+        viewYear,
+        viewMonthIndex - 1
+      );
     }
   };
 
   const handleNextMonth = () => {
     if (viewMonthIndex === 11) {
-      setViewYear((y) => y + 1);
-      setViewMonthIndex(0);
+      updateViewDate(
+        viewYear + 1,
+        0
+      );
     } else {
-      setViewMonthIndex((m) => m + 1);
+      updateViewDate(
+        viewYear,
+        viewMonthIndex + 1
+      );
     }
   };
 
@@ -66,6 +107,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
+
             <button
               type="button"
               aria-label="Next month"
@@ -78,45 +120,72 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
         </div>
 
         <div className="grid grid-cols-7 gap-1 text-center">
-          {WEEKDAY_HEADERS.map((weekday) => (
-            <div
-              key={weekday}
-              className="py-1 text-[11px] leading-4 tracking-[0.4px] font-semibold text-[var(--color-outline)]"
-            >
-              {weekday}
-            </div>
-          ))}
+          {WEEKDAY_HEADERS.map(
+            (weekday) => (
+              <div
+                key={weekday}
+                className="py-1 text-[11px] leading-4 tracking-[0.4px] font-semibold text-[var(--color-outline)]"
+              >
+                {weekday}
+              </div>
+            )
+          )}
 
-          {Array.from({ length: Math.max(0, firstDayOffset) }).map((_, idx) => (
-            <div key={`empty-${idx}`} className="aspect-square" />
+          {Array.from({
+            length: Math.max(
+              0,
+              firstDayOffset
+            ),
+          }).map((_, idx) => (
+            <div
+              key={`empty-${idx}`}
+              className="aspect-square"
+            />
           ))}
 
           {days.map((cell) => {
-            const isSelected = cell.day === selectedDay && cell.isAvailable;
+            const isSelected = cell.dateIso === selectedDateIso && cell.isAvailable;
 
             return (
               <motion.button
                 key={cell.dateIso}
                 type="button"
                 disabled={!cell.isAvailable}
-                whileTap={cell.isAvailable ? { scale: 0.94 } : undefined}
-                transition={{ duration: 0.1, ease: "easeOut" }}
-                onClick={() => cell.isAvailable && onSelectDay(cell.day)}
-                aria-label={`Day ${cell.day}${cell.isAvailable ? ", available" : ", unavailable"}`}
-                aria-pressed={isSelected}
+                whileTap={
+                  cell.isAvailable
+                    ? { scale: 0.94 }
+                    : undefined
+                }
+                transition={{
+                  duration: 0.1,
+                  ease: "easeOut",
+                }}
+                onClick={() => cell.isAvailable && onSelectDate(cell.dateIso)}
+                aria-label={`Day ${cell.day}${
+                  cell.isAvailable
+                    ? ", available"
+                    : ", unavailable"
+                }`}
+                aria-pressed={
+                  isSelected
+                }
                 className={[
                   "relative aspect-square rounded-[8px] text-[13px] leading-[18px] font-medium tabular-nums flex flex-col items-center justify-center transition-colors duration-[120ms] ease-out",
                   isSelected
                     ? "bg-[var(--color-primary)] text-[var(--color-on-primary)] font-semibold shadow-xs cursor-pointer"
                     : cell.isAvailable
-                    ? "bg-[var(--color-surface-container-low)] text-[var(--color-on-surface)] hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary-container)] cursor-pointer"
-                    : "text-[var(--color-outline)]/50 cursor-not-allowed",
+                      ? "bg-[var(--color-surface-container-low)] text-[var(--color-on-surface)] hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary-container)] cursor-pointer"
+                      : "text-[var(--color-outline)]/50 cursor-not-allowed",
                 ].join(" ")}
               >
-                <span>{cell.day}</span>
-                {cell.isAvailable && !isSelected && (
-                  <span className="w-1 h-1 rounded-full bg-[var(--color-primary)] mt-0.5" />
-                )}
+                <span>
+                  {cell.day}
+                </span>
+
+                {cell.isAvailable &&
+                  !isSelected && (
+                    <span className="w-1 h-1 rounded-full bg-[var(--color-primary)] mt-0.5" />
+                  )}
               </motion.button>
             );
           })}
@@ -128,6 +197,7 @@ export const BookingCalendar: React.FC<BookingCalendarProps> = ({
           <span className="w-2 h-2 rounded-full bg-[var(--color-primary)]" />
           <span>Selected</span>
         </div>
+
         <div className="flex items-center gap-1.5">
           <span className="w-2 h-2 rounded-full bg-[var(--color-primary)]/40" />
           <span>Available</span>

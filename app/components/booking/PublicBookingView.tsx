@@ -1,90 +1,68 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { CalendarClock } from "lucide-react";
-import { BookingEventDetails, TimeFormat, TimeSlot } from "@/types/booking";
-import { BASE_SLOTS_GAZA, formatSelectedHeading } from "@/lib/scheduling";
 import {
-  CALENDO_STATE_EVENT,
-  CalendoProfileState,
-  DEFAULT_CALENDO_STATE,
-  loadCalendoState,
-  saveCalendoState,
-} from "@/lib/calendo-store";
+  BookingEventDetails,
+  TimeFormat,
+  TimeSlot,
+  TimeZoneId,
+} from "@/types/booking";
+import {
+  BASE_SLOTS_GAZA,
+  formatSelectedHeading,
+  toDateIso,
+} from "@/lib/scheduling";
+import { saveCalendoState, useCalendoState } from "@/lib/calendo-store";
 import { HostSidebar } from "./HostSidebar";
 import { BookingCalendar } from "./BookingCalendar";
 import { TimeSlotsPanel } from "./TimeSlotsPanel";
 
 export const PublicBookingView: React.FC = () => {
   const router = useRouter();
+  const profile = useCalendoState();
 
-  const [profile, setProfile] = useState<CalendoProfileState>(
-    DEFAULT_CALENDO_STATE
-  );
-  const [selectedDay, setSelectedDay] = useState<number>(24);
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>("10:00");
+  const [todayIso, setTodayIso] = useState<string | null>(null);
+  const [selectedDateIso, setSelectedDateIso] = useState<string | null>(null);
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
 
+  // تاريخ اليوم يُحسب في المتصفح فقط لتجنب اختلاف السيرفر عن المتصفح
   useEffect(() => {
-    setProfile(loadCalendoState());
-
-    const syncState = () => {
-      setProfile(loadCalendoState());
-    };
-
-    window.addEventListener(CALENDO_STATE_EVENT, syncState);
-    window.addEventListener("storage", syncState);
-
-    return () => {
-      window.removeEventListener(CALENDO_STATE_EVENT, syncState);
-      window.removeEventListener("storage", syncState);
-    };
+    setTodayIso(toDateIso(new Date()));
   }, []);
 
-  const eventDetails: BookingEventDetails = useMemo(
-    () => ({
-      slugPath: profile.slugPath,
-      hostName: profile.hostName,
-      hostRole: profile.hostRole,
-      hostAvatar: profile.hostAvatar || "/avatar.svg",
-      isVerified: profile.isVerified,
-      title: profile.title,
-      description: profile.description,
-      durationMinutes: profile.durationMinutes,
-      locationLabel: profile.locationLabel,
-      isAcceptingBookings: profile.isAcceptingBookings,
-    }),
-    [profile]
-  );
+  const eventDetails: BookingEventDetails = profile;
+  const selectedTimezone = profile.selectedTimezone as TimeZoneId;
 
-  const headingText = useMemo(
-    () => formatSelectedHeading(selectedDay, 10, 2026),
-    [selectedDay]
-  );
+  const headingText = selectedDateIso
+    ? formatSelectedHeading(selectedDateIso)
+    : "Select a date";
 
-  const handleChangeTimezone = (tz: string) => {
-    const updated = saveCalendoState({ selectedTimezone: tz });
-    setProfile(updated);
-  };
-
-  const handleChangeTimeFormat = (fmt: TimeFormat) => {
-    const updated = saveCalendoState({ timeFormat: fmt });
-    setProfile(updated);
-  };
-
-  const handleSelectDay = (day: number) => {
-    setSelectedDay(day);
+  const handleSelectDate = (dateIso: string) => {
+    setSelectedDateIso(dateIso);
     setSelectedSlotId(null);
   };
 
+  const handleChangeTimezone = (tz: string) => {
+    saveCalendoState({ selectedTimezone: tz });
+  };
+
+  const handleChangeTimeFormat = (fmt: TimeFormat) => {
+    saveCalendoState({ timeFormat: fmt });
+  };
+
   const handleConfirmSlot = (slot: TimeSlot) => {
+    if (!selectedDateIso) return;
+
     const query = new URLSearchParams({
-      date: `2026-11-${String(selectedDay).padStart(2, "0")}`,
+      date: selectedDateIso,
       slotId: slot.id,
       time: slot.id,
       tz: profile.selectedTimezone,
     });
+
     router.push(`/booking-confirmation?${query.toString()}`);
   };
 
@@ -124,30 +102,36 @@ export const PublicBookingView: React.FC = () => {
           <div className="lg:col-span-4 border-b lg:border-b-0 lg:border-r border-[var(--color-outline-variant)]">
             <HostSidebar
               eventDetails={eventDetails}
-              selectedTimezone={profile.selectedTimezone}
+              selectedTimezone={selectedTimezone}
               onChangeTimezone={handleChangeTimezone}
             />
           </div>
 
           <div className="lg:col-span-5 border-b lg:border-b-0 lg:border-r border-[var(--color-outline-variant)]">
-            <BookingCalendar
-              year={2026}
-              monthIndex={10}
-              selectedDay={selectedDay}
-              onSelectDay={handleSelectDay}
-            />
+            {todayIso ? (
+              <BookingCalendar
+                todayIso={todayIso}
+                selectedDateIso={selectedDateIso}
+                onSelectDate={handleSelectDate}
+              />
+            ) : (
+              <div className="p-6 text-[13px] text-[var(--color-on-surface-variant)]">
+                Loading calendar...
+              </div>
+            )}
           </div>
 
           <div className="lg:col-span-3">
             <TimeSlotsPanel
-              headingLabel={headingText}
-              slots={BASE_SLOTS_GAZA}
-              selectedTimezone={profile.selectedTimezone}
+              headingText={headingText}
+              slots={selectedDateIso ? BASE_SLOTS_GAZA : []}
+              selectedTimezone={selectedTimezone}
               timeFormat={profile.timeFormat}
               selectedSlotId={selectedSlotId ?? ""}
               onTimeFormatChange={handleChangeTimeFormat}
               onSelectSlot={setSelectedSlotId}
               onConfirmBooking={handleConfirmSlot}
+              selectedDate={selectedDateIso ?? ""}
             />
           </div>
         </div>

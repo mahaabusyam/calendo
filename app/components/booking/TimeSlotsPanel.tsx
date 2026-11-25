@@ -2,53 +2,45 @@
 
 import React from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { TimeFormat, TimeSlot } from "@/types/booking";
-import { formatSlotForTimezone } from "@/lib/scheduling";
+import { TimeFormat, TimeSlot, TimeZoneId } from "@/types/booking";
+import { formatSlotLabel } from "@/lib/scheduling";
 
 interface TimeSlotsPanelProps {
-  headingLabel?: string;
-  headingText?: string;
+  headingText: string;
   slots: TimeSlot[];
   selectedSlotId: string;
   timeFormat: TimeFormat;
-  selectedTimezone: string;
+  selectedTimezone: TimeZoneId;
+  selectedDate: string;
   onSelectSlot: (slotId: string) => void;
-  onTimeFormatChange?: (fmt: TimeFormat) => void;
-  onChangeTimeFormat?: (fmt: TimeFormat) => void;
-  onConfirmBooking?: (slot: TimeSlot, formattedTime: string) => void;
-  onConfirmSlot?: (slot: TimeSlot, formattedTime: string) => void;
+  onTimeFormatChange: (fmt: TimeFormat) => void;
+  onConfirmBooking: (slot: TimeSlot, formattedTime: string) => void;
 }
 
 export const TimeSlotsPanel: React.FC<TimeSlotsPanelProps> = ({
-  headingLabel,
   headingText,
   slots,
   selectedSlotId,
   timeFormat,
   selectedTimezone,
+  selectedDate,
   onSelectSlot,
   onTimeFormatChange,
-  onChangeTimeFormat,
   onConfirmBooking,
-  onConfirmSlot,
 }) => {
-  const titleText = headingLabel ?? headingText ?? "Available Times";
-  const handleFormatChange = onTimeFormatChange ?? onChangeTimeFormat ?? (() => {});
-  const handleConfirm = onConfirmBooking ?? onConfirmSlot ?? (() => {});
-
   return (
     <section className="p-6 flex flex-col gap-4 bg-[var(--color-surface-container-lowest)]">
       <div className="flex items-center justify-between">
         <AnimatePresence mode="wait">
           <motion.h2
-            key={titleText}
+            key={headingText}
             initial={{ opacity: 0, x: 6 }}
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -6 }}
             transition={{ duration: 0.16, ease: [0.2, 0, 0, 1] }}
             className="text-[14px] leading-5 font-semibold text-[var(--color-on-surface)] tabular-nums"
           >
-            {titleText}
+            {headingText}
           </motion.h2>
         </AnimatePresence>
 
@@ -59,11 +51,12 @@ export const TimeSlotsPanel: React.FC<TimeSlotsPanelProps> = ({
         >
           {(["12h", "24h"] as TimeFormat[]).map((fmt) => {
             const active = timeFormat === fmt;
+
             return (
               <button
                 key={fmt}
                 type="button"
-                onClick={() => handleFormatChange(fmt)}
+                onClick={() => onTimeFormatChange(fmt)}
                 className={[
                   "relative px-2 py-0.5 rounded-[6px] text-[12px] leading-4 tracking-[0.1px] font-medium transition-colors duration-[120ms] ease-out cursor-pointer",
                   active
@@ -87,11 +80,12 @@ export const TimeSlotsPanel: React.FC<TimeSlotsPanelProps> = ({
 
       <div className="flex flex-col gap-2 max-h-[380px] overflow-y-auto pr-1">
         {slots.map((slot, index) => {
-          const formattedLabel = formatSlotForTimezone(
-            slot,
-            selectedTimezone,
-            timeFormat
-          );
+          const formattedLabel = formatSlotLabel(
+  slot.id,
+  selectedTimezone,
+  timeFormat,
+  selectedDate
+);
           const isSelected = slot.id === selectedSlotId;
 
           return (
@@ -123,7 +117,7 @@ export const TimeSlotsPanel: React.FC<TimeSlotsPanelProps> = ({
                     whileTap={{ scale: 0.96 }}
                     transition={{ duration: 0.14, ease: [0.2, 0, 0, 1] }}
                     type="button"
-                    onClick={() => handleConfirm(slot, formattedLabel)}
+                    onClick={() => onConfirmBooking(slot, formattedLabel)}
                     className="inline-flex items-center justify-center px-4 py-2.5 rounded-[8px] bg-[var(--color-primary)] text-[var(--color-on-primary)] hover:bg-[var(--color-on-primary-container)] text-[13px] leading-[18px] font-medium transition-colors duration-[120ms] ease-out cursor-pointer"
                   >
                     Confirm
@@ -133,10 +127,9 @@ export const TimeSlotsPanel: React.FC<TimeSlotsPanelProps> = ({
                 <motion.button
                   whileHover={{ y: -1 }}
                   whileTap={{ scale: 0.98 }}
-                  transition={{ duration: 0.12, ease: "easeOut" }}
                   type="button"
                   onClick={() => onSelectSlot(slot.id)}
-                  className="w-full px-4 py-2.5 rounded-[8px] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-lowest)] text-[var(--color-on-surface)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-container)]/40 text-[13px] leading-[18px] font-medium tabular-nums text-center transition-colors duration-[120ms] ease-out cursor-pointer"
+                  className="w-full px-4 py-2.5 rounded-[8px] border border-[var(--color-outline-variant)] bg-[var(--color-surface-container-low)] text-[var(--color-on-surface)] text-[13px] leading-[18px] font-medium tabular-nums text-center hover:bg-[var(--color-primary-container)] hover:text-[var(--color-on-primary-container)] transition-colors duration-[120ms] ease-out cursor-pointer"
                 >
                   {formattedLabel}
                 </motion.button>

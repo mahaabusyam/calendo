@@ -1,57 +1,170 @@
-import { BookingEventDetails } from "@/types/booking";
+import {
+  BookingEventDetails,
+  TimeZoneId,
+} from "@/types/booking";
 
 interface GoogleCalendarEventInput {
   event: BookingEventDetails;
-  dateIso: string; // YYYY-MM-DD
-  slotId: string; // HH:MM (base Asia/Gaza)
+  dateIso: string;
+  slotId: string;
+  timeZone?: TimeZoneId;
   guestName?: string;
   guestEmail?: string;
   notes?: string;
 }
 
-const GAZA_OFFSET_MINUTES = 120;
+function getTimeZoneOffsetMinutes(
+  timeZone: TimeZoneId,
+  date: Date
+): number {
+  const parts = new Intl.DateTimeFormat(
+    "en-US",
+    {
+      timeZone,
+      timeZoneName: "longOffset",
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  ).formatToParts(date);
+
+  const offsetPart =
+    parts.find(
+      (part) =>
+        part.type === "timeZoneName"
+    )?.value;
+
+  if (
+    !offsetPart ||
+    offsetPart === "GMT"
+  ) {
+    return 0;
+  }
+
+  const match =
+    offsetPart.match(
+      /^GMT([+-])(\d{1,2})(?::(\d{2}))?$/
+    );
+
+  if (!match) {
+    return 0;
+  }
+
+  const sign =
+    match[1] === "+"
+      ? 1
+      : -1;
+
+  const hours =
+    Number(match[2]);
+
+  const minutes =
+    Number(match[3] ?? 0);
+
+  return (
+    sign *
+    (hours * 60 + minutes)
+  );
+}
 
 export function buildGoogleCalendarUrl({
   event,
   dateIso,
   slotId,
+  timeZone = "Asia/Gaza",
   guestName,
   guestEmail,
   notes,
 }: GoogleCalendarEventInput): string {
-  const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(dateIso) ? dateIso : "2026-11-24";
-  const [year, month, day] = safeDate.split("-").map(Number);
+    
+    // الصفحة تتحقق من الصيغة قبل الوصول إلى هنا
+  const [year, month, day] = dateIso.split("-").map(Number);
+  const [hours, minutes] = slotId.split(":").map(Number);
+  const localWallClockAsUtc =
+    new Date(
+      Date.UTC(
+        year,
+        month - 1,
+        day,
+        hours,
+        minutes,
+        0
+      )
+    );
 
-  const safeSlot = /^\d{2}:\d{2}$/.test(slotId) ? slotId : "10:00";
-  const [hours, minutes] = safeSlot.split(":").map(Number);
 
-  // Convert local Gaza time to UTC for Google Calendar `dates` parameter (YYYYMMDDTHHMMSSZ)
+  const sourceOffset =
+    getTimeZoneOffsetMinutes(
+      timeZone,
+      localWallClockAsUtc
+    );
+
   const startUtcMs =
-    Date.UTC(year, month - 1, day, hours, minutes, 0) - GAZA_OFFSET_MINUTES * 60 * 1000;
-  const endUtcMs = startUtcMs + event.durationMinutes * 60 * 1000;
+    localWallClockAsUtc.getTime() -
+    sourceOffset *
+      60 *
+      1000;
 
-  const formatUtcCompact = (ms: number) => {
-    const d = new Date(ms);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getUTCFullYear()}${pad(d.getUTCMonth() + 1)}${pad(d.getUTCDate())}T${pad(
+  const endUtcMs =
+    startUtcMs +
+    event.durationMinutes *
+      60 *
+      1000;
+
+  const formatUtcCompact = (
+    ms: number
+  ) => {
+    const d =
+      new Date(ms);
+
+    const pad = (
+      value: number
+    ) =>
+      String(value)
+        .padStart(2, "0");
+
+    return `${d.getUTCFullYear()}${pad(
+      d.getUTCMonth() + 1
+    )}${pad(
+      d.getUTCDate()
+    )}T${pad(
       d.getUTCHours()
-    )}${pad(d.getUTCMinutes())}${pad(d.getUTCSeconds())}Z`;
+    )}${pad(
+      d.getUTCMinutes()
+    )}${pad(
+      d.getUTCSeconds()
+    )}Z`;
   };
 
   const detailsLines = [
     event.description,
-    guestName ? `Attendee: ${guestName}` : "",
-    guestEmail ? `Email: ${guestEmail}` : "",
-    notes ? `Notes: ${notes}` : "",
+    guestName
+      ? `Attendee: ${guestName}`
+      : "",
+    guestEmail
+      ? `Email: ${guestEmail}`
+      : "",
+    notes
+      ? `Notes: ${notes}`
+      : "",
   ].filter(Boolean);
 
-  const params = new URLSearchParams({
-    action: "TEMPLATE",
-    text: event.title,
-    dates: `${formatUtcCompact(startUtcMs)}/${formatUtcCompact(endUtcMs)}`,
-    details: detailsLines.join("\n"),
-    location: event.locationLabel,
-  });
+  const params =
+    new URLSearchParams({
+      action: "TEMPLATE",
+      text: event.title,
+      dates:
+        `${formatUtcCompact(
+          startUtcMs
+        )}/${formatUtcCompact(
+          endUtcMs
+        )}`,
+      details:
+        detailsLines.join(
+          "\n"
+        ),
+      location:
+        event.locationLabel,
+    });
 
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }

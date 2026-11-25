@@ -43,10 +43,7 @@ export default function RootLayout({
       className={`${plusJakartaSans.variable} ${inter.variable} ${jetbrainsMono.variable}`}
     >
       <body className="bg-[var(--color-background)] text-[var(--color-on-background)] font-sans antialiased selection:bg-[var(--color-primary-container)] selection:text-[var(--color-on-primary-container)]">
-        <div className="min-h-screen flex flex-col lg:flex-row">
-          <DashboardSidebar />
-          <div className="flex-1 min-w-0">{children}</div>
-        </div>
+        {children}
       </body>
     </html>
   );

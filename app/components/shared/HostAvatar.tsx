@@ -15,18 +15,20 @@ export const HostAvatar: React.FC<HostAvatarProps> = ({
   sizeClassName = "w-12 h-12",
 }) => {
   const fallbackSrc = "/avatar.svg";
-  const [hasMounted, setHasMounted] = useState<boolean>(false);
-  const [currentSrc, setCurrentSrc] = useState<string>(fallbackSrc);
+
+  const [currentSrc, setCurrentSrc] = useState<string>(
+    () => src?.trim() || fallbackSrc
+  );
 
   useEffect(() => {
-    setHasMounted(true);
-
     const syncAvatar = () => {
       if (src && src.trim().length > 0) {
         setCurrentSrc(src.trim());
         return;
       }
+
       const stored = loadCalendoState().hostAvatar;
+
       setCurrentSrc(
         stored && stored.trim().length > 0 ? stored.trim() : fallbackSrc
       );
@@ -43,11 +45,9 @@ export const HostAvatar: React.FC<HostAvatarProps> = ({
     };
   }, [src]);
 
-  const activeSrc = hasMounted ? currentSrc : fallbackSrc;
-
   return (
     <img
-      src={activeSrc}
+      src={currentSrc}
       alt={alt}
       onError={() => {
         if (currentSrc !== fallbackSrc) {
