@@ -1,68 +1,67 @@
-# Calendo — Scheduling & Booking Platform
+# Calendo — Scheduling & Booking (Front-end Prototype)
 
-A modern, responsive scheduling and booking web application built with **Next.js (App Router)**, **TypeScript**, and **Tailwind CSS**, featuring client-side state persistence via `localStorage`, real-time cross-component synchronization, multi-timezone slot formatting (`12h` / `24h`), and a host management dashboard.
+A Calendly-style scheduling app built with **Next.js (App Router)**, **TypeScript**, **Tailwind CSS v4**, and **Framer Motion**.
 
----
+> **Status:** front-end prototype. There is no backend or database yet.
+> Only the host profile (name, avatar, timezone, time format…) is persisted, in the browser's `localStorage`.
+> Event types, availability, and the bookings table use mock data and reset on refresh.
 
-## Key Features
+## Features
 
-- **Public Booking Flow:**
-  - Interactive host profile sidebar displaying avatar, role, verification status, consultation details, session duration, and meeting location.
-  - Interactive monthly calendar for selecting available dates.
-  - Dynamic time-slot selection panel with live `12h` / `24h` format toggling and timezone conversion.
-  - Booking confirmation and success views with formatted date, time range, and timezone summaries.
-- **Dashboard & Settings Management:**
-  - Responsive dashboard sidebar with desktop and mobile drawer navigation.
-  - Settings page (`/dashboard/settings`) for updating host profile details, event title/description, default timezone, time format (`12h` / `24h`), and profile avatar.
-- **Local State Persistence & Sync:**
-  - Centralized client-side store (`app/lib/calendo-store.ts`) backed by `localStorage`.
-  - Reactive updates across components using a custom event (`calendo:state-updated`) and `storage` event listeners.
-  - Avatar upload support converted to Data URL (`Base64`) with a local `/avatar.svg` fallback.
-  - Hydration-safe initialization (`DEFAULT_CALENDO_STATE` and `/avatar.svg` on initial render, synced after mount via `useEffect`) to prevent SSR/client hydration mismatches in Next.js.
+- **Public booking flow:** host profile, monthly calendar, time slots, confirmation form, success page, and "Add to Google Calendar" link.
+- **Time zones:** slots are defined in Asia/Gaza and converted with `Intl.DateTimeFormat`, so daylight saving time is handled per date. 12h / 24h toggle.
+- **Dashboard:** event types, weekly availability, upcoming bookings, and a settings page (profile, avatar upload, timezone, time format).
+- **Shared profile store:** `app/lib/calendo-store.ts` + the `useCalendoState` hook keep all pages in sync through a custom event and the `storage` event.
 
----
+## Routes
 
-## Tech Stack
+| Route | Purpose |
+|---|---|
+| `/` | Public booking page |
+| `/booking-confirmation` | Guest details form (requires valid `date`, `slotId`, `tz` query params) |
+| `/booking-success` | Confirmation + add to calendar |
+| `/dashboard/event-types` | Event types (mock data) |
+| `/dashboard/availability` | Weekly availability + bookings (mock data) |
+| `/dashboard/settings` | Host profile & preferences (persisted locally) |
 
-- **Framework:** Next.js (App Router & Turbopack)
-- **Language:** TypeScript
-- **Styling:** Tailwind CSS with CSS custom properties (`--color-*`)
-- **Animations:** Framer Motion
-- **Icons:** Lucide React
+## Getting started
 
----
+```bash
+npm install
+npm run dev
+```
 
-## Project Structure
+Open http://localhost:3000.
+
+## Project structure
 
 ```text
-calendo/
-├── app/
-│   ├── components/
-│   │   ├── booking/
-│   │   │   ├── BookingCalendar.tsx
-│   │   │   ├── BookingConfirmationForm.tsx
-│   │   │   ├── BookingConfirmationView.tsx
-│   │   │   ├── BookingSuccessView.tsx
-│   │   │   ├── BookingSummarySidebar.tsx
-│   │   │   ├── HostSidebar.tsx
-│   │   │   ├── PublicBookingView.tsx
-│   │   │   └── TimeSlotsPanel.tsx
-│   │   ├── dashboard/
-│   │   │   └── DashboardSidebar.tsx
-│   │   └── shared/
-│   │       └── HostAvatar.tsx
-│   ├── dashboard/
-│   │   ├── availability/
-│   │   ├── event-types/
-│   │   └── settings/
-│   │       └── page.tsx
-│   ├── lib/
-│   │   ├── calendo-store.ts
-│   │   └── scheduling.ts
-│   └── types/
-│       └── booking.ts
-├── public/
-│   └── avatar.svg
-├── .gitignore
-├── package.json
-└── tsconfig.json
+app/
+├── page.tsx, booking-confirmation/, booking-success/   # public routes
+├── dashboard/            # layout.tsx holds the sidebar; event-types, availability, settings
+├── components/
+│   ├── booking/          # calendar, time slots, confirmation, success views
+│   ├── dashboard/        # sidebar, event type cards, availability, bookings table
+│   └── shared/           # HostAvatar
+├── lib/
+│   ├── calendo-store.ts  # localStorage-backed profile store + useCalendoState
+│   ├── scheduling.ts     # calendar and time zone helpers
+│   ├── googleCalendar.ts # builds the Google Calendar link
+│   └── *Data.ts          # mock data
+└── types/                # shared TypeScript types
+```
+
+The `@/` import alias points to the `app/` folder (see `tsconfig.json`).
+
+## Known limitations
+
+- Bookings are not stored; guest details travel through URL query params.
+- Availability and event types do not affect the public booking page yet.
+- No authentication.
+
+## Roadmap
+
+- PostgreSQL + ORM for hosts, event types, availability, and bookings
+- Authentication and per-host public pages
+- Server-side validation (Zod) and email notifications
+- Tests

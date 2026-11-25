@@ -75,32 +75,10 @@ export function buildGoogleCalendarUrl({
   guestEmail,
   notes,
 }: GoogleCalendarEventInput): string {
-  const safeDate =
-    /^\d{4}-\d{2}-\d{2}$/.test(
-      dateIso
-    )
-      ? dateIso
-      : new Date()
-          .toISOString()
-          .slice(0, 10);
-
-  const [year, month, day] =
-    safeDate
-      .split("-")
-      .map(Number);
-
-  const safeSlot =
-    /^\d{2}:\d{2}$/.test(
-      slotId
-    )
-      ? slotId
-      : "10:00";
-
-  const [hours, minutes] =
-    safeSlot
-      .split(":")
-      .map(Number);
-
+    
+    // الصفحة تتحقق من الصيغة قبل الوصول إلى هنا
+  const [year, month, day] = dateIso.split("-").map(Number);
+  const [hours, minutes] = slotId.split(":").map(Number);
   const localWallClockAsUtc =
     new Date(
       Date.UTC(
@@ -112,6 +90,7 @@ export function buildGoogleCalendarUrl({
         0
       )
     );
+
 
   const sourceOffset =
     getTimeZoneOffsetMinutes(

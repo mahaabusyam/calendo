@@ -6,24 +6,20 @@ import { CalendarClock } from "lucide-react";
 import { buildBookingSummary } from "@/lib/scheduling";
 import { BookingSummarySidebar } from "./BookingSummarySidebar";
 import { BookingConfirmationForm } from "./BookingConfirmationForm";
-import { DEFAULT_EVENT_DETAILS } from "@/lib/eventData";
+import { useCalendoState } from "@/lib/calendo-store";
 import { TimeZoneId } from "@/types/booking";
 
 interface BookingConfirmationViewProps {
-  date?: string;
-  slotId?: string;
-  time?: string;
-  tz?: string;
+  date: string;
+  slotId: string;
+  time: string;
+  tz: string;
 }
 
 export const BookingConfirmationView: React.FC<
-  BookingConfirmationViewProps
-> = ({
-  date,
-  slotId = "10:00",
-  time = "10:00 AM",
-  tz = "Asia/Gaza",
-}) => {
+  BookingConfirmationViewProps> = ({ date, slotId, time, tz }) => {
+  const event = useCalendoState();
+
   const dateValue = date ?? new Date().toISOString().slice(0, 10);
   const timeZone = tz as TimeZoneId;
 
@@ -31,7 +27,7 @@ export const BookingConfirmationView: React.FC<
     dateValue,
     slotId,
     timeZone,
-    DEFAULT_EVENT_DETAILS.durationMinutes
+    event.durationMinutes
   );
 
   return (
@@ -49,7 +45,7 @@ export const BookingConfirmationView: React.FC<
           <span className="text-[var(--color-outline)]">/</span>
 
           <span className="font-mono text-[12px] leading-4 font-medium text-[var(--color-outline)]">
-            {DEFAULT_EVENT_DETAILS.slugPath}
+            {event.slugPath}
           </span>
         </div>
 
@@ -67,7 +63,7 @@ export const BookingConfirmationView: React.FC<
       >
         <div className="grid grid-cols-1 md:grid-cols-[340px_1fr] divide-y md:divide-y-0 md:divide-x divide-[var(--color-outline-variant)]">
           <BookingSummarySidebar
-            event={DEFAULT_EVENT_DETAILS}
+            event={event}
             summary={summary}
           />
 

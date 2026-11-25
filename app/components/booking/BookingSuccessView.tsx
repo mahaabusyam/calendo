@@ -14,13 +14,13 @@ import {
 } from "lucide-react";
 import { buildBookingSummary } from "@/lib/scheduling";
 import { buildGoogleCalendarUrl } from "@/lib/googleCalendar";
-import { DEFAULT_EVENT_DETAILS } from "@/lib/eventData";
+import { useCalendoState } from "@/lib/calendo-store";
 import { TimeZoneId } from "@/types/booking";
 
 interface BookingSuccessViewProps {
-  date?: string;
-  slotId?: string;
-  tz?: string;
+  date: string;
+  slotId: string;
+  tz: string;
   guestName?: string;
   guestEmail?: string;
   notes?: string;
@@ -30,12 +30,14 @@ export const BookingSuccessView: React.FC<
   BookingSuccessViewProps
 > = ({
   date,
-  slotId = "10:00",
-  tz = "Asia/Gaza",
+  slotId,
+  tz,
   guestName = "",
   guestEmail = "",
   notes = "",
 }) => {
+  const event = useCalendoState();
+
   const [calendarPrepared, setCalendarPrepared] =
     useState<boolean>(false);
 
@@ -48,11 +50,11 @@ export const BookingSuccessView: React.FC<
     dateValue,
     slotId,
     timeZone,
-    DEFAULT_EVENT_DETAILS.durationMinutes
+    event.durationMinutes
   );
 
   const googleCalendarUrl = buildGoogleCalendarUrl({
-    event: DEFAULT_EVENT_DETAILS,
+    event,
     dateIso: dateValue,
     slotId,
     guestName,
@@ -84,7 +86,7 @@ export const BookingSuccessView: React.FC<
           <span className="text-[var(--color-outline)]">/</span>
 
           <span className="font-mono text-[12px] leading-4 font-medium text-[var(--color-outline)]">
-            {DEFAULT_EVENT_DETAILS.slugPath}
+            {event.slugPath}
           </span>
         </div>
 
@@ -175,12 +177,12 @@ export const BookingSuccessView: React.FC<
               </span>
 
               <h2 className="text-[16px] leading-6 tracking-[-0.1px] font-semibold text-[var(--color-on-surface)]">
-                {DEFAULT_EVENT_DETAILS.title}
+                {event.title}
               </h2>
             </div>
 
             <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[var(--color-primary-container)] text-[var(--color-on-primary-container)] text-[12px] leading-4 font-medium tabular-nums shrink-0">
-              {DEFAULT_EVENT_DETAILS.durationMinutes} mins
+              {event.durationMinutes} mins
             </span>
           </div>
 
@@ -189,17 +191,17 @@ export const BookingSuccessView: React.FC<
           <div className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
               <img
-                src={DEFAULT_EVENT_DETAILS.hostAvatar}
-                alt={DEFAULT_EVENT_DETAILS.hostName}
+                src={event.hostAvatar}
+                alt={event.hostName}
                 className="w-6 h-6 rounded-full object-cover border border-[var(--color-outline-variant)] shrink-0"
               />
 
               <div className="flex items-center gap-1.5">
                 <span className="text-[14px] leading-5 font-medium text-[var(--color-on-surface)]">
-                  {DEFAULT_EVENT_DETAILS.hostName}
+                  {event.hostName}
                 </span>
 
-                {DEFAULT_EVENT_DETAILS.isVerified && (
+                {event.isVerified && (
                   <BadgeCheck className="w-4 h-4 text-[var(--color-primary)]" />
                 )}
               </div>
@@ -226,7 +228,7 @@ export const BookingSuccessView: React.FC<
               <Video className="w-4 h-4 text-[var(--color-outline)] shrink-0" />
 
               <span className="text-[13px] leading-[18px]">
-                {DEFAULT_EVENT_DETAILS.locationLabel} (link attached to
+                {event.locationLabel} (link attached to
                 calendar invite)
               </span>
             </div>

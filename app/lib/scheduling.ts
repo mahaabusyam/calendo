@@ -15,55 +15,15 @@ export const TIME_ZONES: TimeZoneOption[] = [
 ];
 
 export const BASE_SLOTS_GAZA: TimeSlot[] = [
-  {
-    id: "09:00",
-    label12h: "09:00 AM",
-    label24h: "09:00",
-    offsetMinutesFromGaza: 0,
-  },
-  {
-    id: "09:30",
-    label12h: "09:30 AM",
-    label24h: "09:30",
-    offsetMinutesFromGaza: 0,
-  },
-  {
-    id: "10:00",
-    label12h: "10:00 AM",
-    label24h: "10:00",
-    offsetMinutesFromGaza: 0,
-  },
-  {
-    id: "10:30",
-    label12h: "10:30 AM",
-    label24h: "10:30",
-    offsetMinutesFromGaza: 0,
-  },
-  {
-    id: "11:00",
-    label12h: "11:00 AM",
-    label24h: "11:00",
-    offsetMinutesFromGaza: 0,
-  },
-  {
-    id: "13:00",
-    label12h: "01:00 PM",
-    label24h: "13:00",
-    offsetMinutesFromGaza: 0,
-  },
-  {
-    id: "13:30",
-    label12h: "01:30 PM",
-    label24h: "13:30",
-    offsetMinutesFromGaza: 0,
-  },
-  {
-    id: "14:00",
-    label12h: "02:00 PM",
-    label24h: "14:00",
-    offsetMinutesFromGaza: 0,
-  },
-];
+  "09:00",
+  "09:30",
+  "10:00",
+  "10:30",
+  "11:00",
+  "13:00",
+  "13:30",
+  "14:00",
+].map((id) => ({ id }));
 
 
 const WEEKDAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -202,39 +162,6 @@ export function formatSelectedHeading(dateIso: string): string {
   return `${WEEKDAY_NAMES[date.getDay()]}, ${SHORT_MONTH_NAMES[m - 1]} ${d}`;
 }
 
-function extractBaseTime24(input: unknown): string {
-  if (typeof input === "string" && input.includes(":")) {
-    return input;
-  }
-
-  if (typeof input === "number") {
-    return `${String(input).padStart(2, "0")}:00`;
-  }
-
-  if (input && typeof input === "object") {
-    const obj = input as {
-      label24h?: string;
-      id?: string;
-    };
-
-    if (
-      typeof obj.label24h === "string" &&
-      obj.label24h.includes(":")
-    ) {
-      return obj.label24h;
-    }
-
-    if (
-      typeof obj.id === "string" &&
-      obj.id.includes(":")
-    ) {
-      return obj.id;
-    }
-  }
-
-  return "09:00";
-}
-
 function formatMinutesToDisplay(
   totalMinutesRaw: number,
   timeFormat: TimeFormat
@@ -266,39 +193,6 @@ function formatMinutesToDisplay(
   return `${hh12}:${mm} ${period}`;
 }
 
-function getTimeZoneOffsetMinutes(
-  timeZone: TimeZoneId,
-  date: Date
-): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone,
-    timeZoneName: "longOffset",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).formatToParts(date);
-
-  const offsetPart = parts.find(
-    (part) => part.type === "timeZoneName"
-  )?.value;
-
-  if (!offsetPart || offsetPart === "GMT") {
-    return 0;
-  }
-
-  const match = offsetPart.match(
-    /^GMT([+-])(\d{1,2})(?::(\d{2}))?$/
-  );
-
-  if (!match) {
-    return 0;
-  }
-
-  const sign = match[1] === "+" ? 1 : -1;
-  const hours = Number(match[2]);
-  const minutes = Number(match[3] ?? 0);
-
-  return sign * (hours * 60 + minutes);
-}
 
 function getDateParts(dateIso: string): {
   year: number;
@@ -349,51 +243,60 @@ function getTimeZoneDifferenceMinutes(
   return targetOffset - sourceOffset;
 }
 
-export function formatSlotLabel(
-  baseTime24: unknown,
-  timezoneId: TimeZoneId,
-  timeFormat: TimeFormat,
-  dateIso: string = getTodayIso()
-): string {
-  const rawStr = extractBaseTime24(baseTime24);
-
-  const parts = rawStr.split(":");
-
-  const baseHours = Number.isFinite(Number(parts[0]))
-    ? Number(parts[0])
-    : 9;
-
-  const minutes = Number.isFinite(Number(parts[1]))
-    ? Number(parts[1])
-    : 0;
-
-  const diffMinutes = getTimeZoneDifferenceMinutes(
-    dateIso,
-    "Asia/Gaza",
-    timezoneId
-  );
-
-  const totalMinutesRaw =
-    baseHours * 60 + minutes + diffMinutes;
-
-  return formatMinutesToDisplay(
-    totalMinutesRaw,
-    timeFormat
-  );
+export function parseTimeZoneId(value: string | undefined): TimeZoneId | null {
+  return TIME_ZONES.find((tz) => tz.value === value)?.value ?? null;
 }
 
-export function formatSlotForTimezone(
-  baseTime24: unknown,
+const BASE_TIMEZONE: TimeZoneId = "Asia/Gaza";
+
+// كم دقيقة يبعد توقيت منطقة معينة عن UTC في لحظة معينة
+function getTimeZoneOffsetMinutes(timeZone: string, utcMs: number): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hourCycle: "h23",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  }).formatToParts(new Date(utcMs));
+
+  const get = (type: string) =>
+    Number(parts.find((p) => p.type === type)?.value);
+
+  const asUtc = Date.UTC(
+    get("year"),
+    get("month") - 1,
+    get("day"),
+    get("hour"),
+    get("minute"),
+    get("second")
+  );
+  return Math.round((asUtc - utcMs) / 60000);
+}
+
+// الموعد مكتوب بتوقيت غزة، فنحوّله للحظة UTC حقيقية
+function slotToUtcMs(dateIso: string, time24: string): number {
+  const [y, m, d] = dateIso.split("-").map(Number);
+  const [h, min] = time24.split(":").map(Number);
+  const guess = Date.UTC(y, m - 1, d, h, min);
+  return guess - getTimeZoneOffsetMinutes(BASE_TIMEZONE, new Date(guess)) * 60000;
+}
+
+export function formatSlotLabel(
+  baseTime24: string,
   timezoneId: TimeZoneId,
   timeFormat: TimeFormat,
-  dateIso: string = getTodayIso()
+  dateIso: string
 ): string {
-  return formatSlotLabel(
-    baseTime24,
-    timezoneId,
-    timeFormat,
-    dateIso
-  );
+  const utcMs = slotToUtcMs(dateIso, baseTime24);
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone: timezoneId,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: timeFormat === "12h" ? "h12" : "h23",
+  }).format(new Date(utcMs));
 }
 
 export function formatTimezoneShortLabel(
@@ -424,47 +327,17 @@ export function formatTimezoneShortLabel(
 }
 
 export function buildBookingSummary(
-  dateIsoOrParams?:
-    | string
-    | null
-    | {
-        dateIso?: string | null;
-        slotId?: string | null;
-        time24?: string | null;
-        tz?: TimeZoneId | null;
-        timeFormat?: TimeFormat;
-        durationMinutes?: number;
-      },
-  slotIdArg?: string | null,
-  tzArg?: TimeZoneId | null,
-  durationMinutesArg?: number
+  dateIso: string,
+  slotId: string,
+  tz: TimeZoneId,
+  durationMinutes: number,
+  timeFormat: TimeFormat = "12h"
 ): BookingSummaryData {
-  const isObj =
-    typeof dateIsoOrParams === "object" &&
-    dateIsoOrParams !== null;
-
-  const safeDateIso =
-    (isObj ? dateIsoOrParams.dateIso : dateIsoOrParams) ||
-    getTodayIso();
-
-  const safeTime24 =
-    (isObj
-      ? dateIsoOrParams.time24 ||
-        dateIsoOrParams.slotId
-      : slotIdArg) || "10:00";
-
-  const safeTz =
-    (isObj ? dateIsoOrParams.tz : tzArg) ||
-    "Asia/Gaza";
-
-  const safeTimeFormat =
-    (isObj && dateIsoOrParams.timeFormat) ||
-    "12h";
-
-  const safeDuration =
-    (isObj
-      ? dateIsoOrParams.durationMinutes
-      : durationMinutesArg) || 30;
+  const safeDateIso = dateIso;
+  const safeTime24 = slotId;
+  const safeTz = tz;
+  const safeTimeFormat = timeFormat;
+  const safeDuration = durationMinutes;
 
   const { year, month, day } =
     getDateParts(safeDateIso);

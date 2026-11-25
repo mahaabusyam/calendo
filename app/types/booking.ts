@@ -10,9 +10,6 @@ export type BookingStatus = "confirmed" | "cancelled" | "rescheduled";
 
 export interface TimeSlot {
   id: string;
-  label12h: string;
-  label24h: string;
-  offsetMinutesFromGaza: number;
 }
 
 export interface TimeZoneOption {
