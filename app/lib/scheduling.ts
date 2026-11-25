@@ -248,9 +248,10 @@ export function parseTimeZoneId(value: string | undefined): TimeZoneId | null {
 }
 
 const BASE_TIMEZONE: TimeZoneId = "Asia/Gaza";
-
 // كم دقيقة يبعد توقيت منطقة معينة عن UTC في لحظة معينة
-function getTimeZoneOffsetMinutes(timeZone: string, utcMs: number): number {
+function getTimeZoneOffsetMinutes(timeZone: string, date: Date): number {
+  const utcMs = date.getTime();
+
   const parts = new Intl.DateTimeFormat("en-US", {
     timeZone,
     hourCycle: "h23",
@@ -260,7 +261,7 @@ function getTimeZoneOffsetMinutes(timeZone: string, utcMs: number): number {
     hour: "2-digit",
     minute: "2-digit",
     second: "2-digit",
-  }).formatToParts(new Date(utcMs));
+  }).formatToParts(date);
 
   const get = (type: string) =>
     Number(parts.find((p) => p.type === type)?.value);
